@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Recruiting Platform - Demo Presentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow: hidden;
+        }
+
+        .slide {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0);
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .slide-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .slide-indicator:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .slide-indicator.active {
+            width: 48px;
+            background-color: rgb(168, 85, 247);
+        }
+
+        .video-container {
+            position: relative;
+            aspect-ratio: 16/9;
+            background-color: rgba(30, 41, 59, 0.5); /* Original purple */
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .video-container:hover {
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        .video-element {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Changed from cover to contain to prevent zoom */
+            display: none; /* Hidden by default */
+        }
+
+        .video-element.playing {
+            display: block;
+        }
+
+        .play-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: rgba(168, 85, 247, 0.2);
+            border: 2px solid rgb(192, 132, 252);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .video-container:hover .play-button {
+            background-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 20;
+        }
+
+        .video-container:hover .video-controls {
+            opacity: 1;
+        }
+
+        .control-btn {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            color: white;
+            padding: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(168, 85, 247, 0.5);
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: rgb(168, 85, 247);
+            border-radius: 3px;
+            width: 0%;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .volume-slider {
+            width: 60px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .volume-level {
+            height: 100%;
+            background: rgb(168, 85, 247);
+            border-radius: 3px;
+            width: 100%;
+        }
+
+        .time-display {
+            color: white;
+            font-size: 12px;
+            margin: 0 10px;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            color: white;
+            padding: 6px;
+            cursor: pointer;
+            z-index: 20;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .video-container:hover .fullscreen-btn {
+            display: block;
+        }
+
+        /* Full-screen video styling */
+        .video-element:fullscreen {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ensure video maintains aspect ratio in full-screen */
+        }
+
+        .video-element::-webkit-media-controls-fullscreen-button {
+            display: none !important; /* Hide native full-screen button */
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .highlight-item {
+            opacity: 0;
+            transform: translateX(20px);
+            animation: slideIn 0.5s ease forwards;
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .content-paragraph {
+            opacity: 0;
+            transform: translateX(20px);
+            animation: slideIn 0.5s ease forwards;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div class="h-screen flex flex-col">
+        <!-- Main Content -->
+        <div class="flex-1 flex items-center justify-center p-8">
+            <div class="max-w-7xl w-full">
+                <div class="bg-white/5 backdrop-blur-lg rounded-3xl p-12 border border-white/10 shadow-2xl">
+                    <div id="slides-container" class="relative min-h-[500px]">
+                        <!-- Slides will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="pb-8 px-8">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <!-- Previous Button -->
+                <button id="prevBtn" class="btn">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Previous
+                </button>
+
+                <!-- Slide Indicators -->
+                <div id="indicators" class="flex gap-2">
+                    <!-- Indicators will be dynamically inserted here -->
+                </div>
+
+                <!-- Next Button -->
+                <button id="nextBtn" class="btn">
+                    Next
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Slide Counter -->
+            <div id="slideCounter" class="text-center mt-4 text-white/50 text-sm">
+                Slide 1 of 9
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const slidesData = [
+            {
+                icon: '🎬',
+                title: 'Opening Scene',
+                content: [
+                    'Hiring is changing. Candidates expect more. Employers need better tools. And AI is redefining what\'s possible.',
+                    'Welcome to the future of recruitment.'
+                ],
+                videoCaption: 'Application Introduction',
+                videoPath: 'path/to/opening-video.mp4'
+            },
+            {
+                icon: '🧩',
+                subtitle: 'Section 1 — Employer Side',
+                title: 'Job Position Intelligence',
+                content: [
+                    'With our AI-driven Job Position Builder, employers can create smarter job posts in seconds. Simply describe your role — and AI transforms it into structured evaluation criteria, weighted metrics, and custom matching rules.',
+                    'No more guesswork. No more manual screening. Only precision.'
+                ],
+                highlights: [
+                    'AI-driven job post creation',
+                    'Structured evaluation criteria',
+                    'Weighted metrics and custom matching rules'
+                ],
+                videoCaption: 'AI Job Position Builder Demo',
+                videoPath: '/1.mp4'
+            },
+            {
+                icon: '📊',
+                subtitle: 'Section 1 — Employer Side',
+                title: 'Smart Resume Screening',
+                content: [
+                    'For every job you create, the platform instantly organizes all applicants, calculates their score, and highlights the strongest matches.',
+                    'Want to know if a candidate truly fits? Just ask. Our AI can chat with any resume — or even all resumes at once — and give you clear insights instantly.'
+                ],
+                highlights: [
+                    'Instant applicant organization',
+                    'Automated scoring and ranking',
+                    'AI-powered resume chat for instant insights'
+                ],
+                videoCaption: 'Resume Screening & AI Chat Demo',
+                videoPath: '/2.mp4'
+            },
+            {
+                icon: '🤖',
+                subtitle: 'Section 1 — Employer Side',
+                title: 'Automated Interviewer',
+                content: [
+                    'Introducing your new AI Interviewer. A fully customizable, automated interviewing engine.',
+                    'Define your interview instructions, add your own questions, or let the AI generate them for you. Then let the system schedule, run, and evaluate video interviews automatically.'
+                ],
+                highlights: [
+                    'Fully customizable AI interviewer',
+                    'Custom or AI-generated questions',
+                    'Automated scheduling and evaluation'
+                ],
+                videoCaption: 'AI Interviewer Setup & Execution',
+                videoPath: '/3.mp4'
+            },
+            {
+                icon: '📅',
+                subtitle: 'Section 1 — Employer Side',
+                title: 'Intelligent Scheduling',
+                content: [
+                    'The platform compares calendars between employers and applicants, finds the perfect time slot, and schedules the interview for you — effortlessly.',
+                    'Every session is recorded, analyzed, and summarized.'
+                ],
+                highlights: [
+                    'Automatic calendar comparison',
+                    'Perfect time slot detection',
+                    'Session recording and analysis'
+                ],
+                videoCaption: 'Smart Scheduling Demo',
+                videoPath: '/4.mp4'
+            },
+            {
+                icon: '🔍',
+                subtitle: 'Section 2 — Applicant Side',
+                title: 'Explore Job Positions',
+                content: [
+                    'Applicants get a simple, friendly dashboard where they can explore job positions, ask questions, and understand exactly what employers are looking for.'
+                ],
+                highlights: [
+                    'Simple, user-friendly dashboard',
+                    'Interactive job exploration',
+                    'AI-powered Q&A about positions'
+                ],
+                videoCaption: 'Applicant Dashboard Demo',
+                videoPath: '/5.mp4'
+            },
+            {
+                icon: '📈',
+                subtitle: 'Section 2 — Applicant Side',
+                title: 'Application Tracking',
+                content: [
+                    'Each application includes real-time AI scoring, so candidates always know where they stand.'
+                ],
+                highlights: [
+                    'Real-time AI scoring',
+                    'Transparent application status',
+                    'Clear feedback and insights'
+                ],
+                videoCaption: 'Application Tracking Demo',
+                videoPath: '/6.mp4'
+            },
+            {
+                icon: '📄',
+                subtitle: 'Section 2 — Applicant Side',
+                title: 'AI Resume Builder',
+                content: [
+                    'No resume? No problem. Upload an existing file for instant resume parsing — or build a brand-new resume from scratch using AI.',
+                    'Choose a template, describe your job title, and let AI generate your skills, experience, and professional summary. Simple, fast, and beautiful.'
+                ],
+                highlights: [
+                    'Instant resume parsing',
+                    'AI-generated content',
+                    'Multiple professional templates'
+                ],
+                videoCaption: 'AI Resume Builder Demo',
+                videoPath: '/7.mp4'
+            },
+            {
+                icon: '✨',
+                title: 'Vision',
+                content: [
+                    'Whether you\'re hiring or applying, our platform brings clarity, speed, and intelligence to every step of the process.',
+                    'This is recruitment — reimagined. Smarter. Faster. AI-powered.',
+                    'Welcome to the next generation of hiring.'
+                ],
+                videoCaption: 'Platform Overview & Vision',
+                videoPath: 'path/to/vision-video.mp4'
+            }
+        ];
+
+        let currentSlide = 0;
+
+        function createSlideHTML(slide, index) {
+            const videoHTML = slide.videoPath ? `
+                <div class="video-container" data-video-path="${slide.videoPath}">
+                    <video class="video-element" playsinline>
+                        <source src="${slide.videoPath}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="play-button">
+                        <svg class="w-8 h-8 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </div>
+                    <div class="video-controls">
+                        <button class="control-btn play-pause-btn">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </button>
+                        <div class="progress-container">
+                            <div class="progress-bar"></div>
+                        </div>
+                        <div class="time-display">0:00 / 0:00</div>
+                        <div class="volume-container">
+                            <button class="control-btn volume-btn">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                </svg>
+                            </button>
+                            <div class="volume-slider">
+                                <div class="volume-level"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fullscreen-btn">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path>
+                        </svg>
+                    </div>
+                </div>
+            ` : `
+                <div class="video-container">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="play-button mx-auto mb-4">
+                                <svg class="w-8 h-8 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                            </div>
+                            <p class="text-white/60">Video placeholder</p>
+                            <p class="text-white/40 text-sm mt-2">Click to upload your video file</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const highlightsHTML = slide.highlights ? `
+                <div class="mt-6 space-y-2">
+                    ${slide.highlights.map((highlight, i) => `
+                        <div class="highlight-item flex items-start gap-3" style="animation-delay: ${0.4 + i * 0.1}s">
+                            <svg class="w-2 h-2 text-purple-400 mt-2 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="12"/>
+                            </svg>
+                            <span class="text-white/70">${highlight}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+
+            return `
+                <div class="slide ${index === 0 ? 'active' : ''}" data-slide="${index}">
+                    <div class="grid md:grid-cols-2 gap-12 items-center">
+                        <!-- Video Section -->
+                        <div class="order-2 md:order-1">
+                            ${videoHTML}
+                            ${slide.videoCaption ? `
+                                <p class="text-white/50 text-sm mt-3 text-center italic">
+                                    ${slide.videoCaption}
+                                </p>
+                            ` : ''}
+                        </div>
+
+                        <!-- Text Section -->
+                        <div class="order-1 md:order-2">
+                            ${slide.icon ? `
+                                <div class="mb-6">
+                                    <span class="text-5xl">${slide.icon}</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${slide.subtitle ? `
+                                <div class="text-purple-400 mb-2 tracking-wide uppercase text-sm">
+                                    ${slide.subtitle}
+                                </div>
+                            ` : ''}
+                            
+                            <h1 class="text-white mb-6 text-4xl font-bold">
+                                ${slide.title}
+                            </h1>
+                            
+                            <div class="space-y-4">
+                                ${slide.content.map((paragraph, i) => `
+                                    <p class="content-paragraph text-white/80 leading-relaxed text-lg" style="animation-delay: ${0.2 + i * 0.1}s">
+                                        ${paragraph}
+                                    </p>
+                                `).join('')}
+                            </div>
+
+                            ${highlightsHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSlides() {
+            const container = document.getElementById('slides-container');
+            container.innerHTML = slidesData.map((slide, index) => createSlideHTML(slide, index)).join('');
+            
+            // Add click event listeners to video containers
+            document.querySelectorAll('.video-container[data-video-path]').forEach(container => {
+                const videoElement = container.querySelector('.video-element');
+                const playButton = container.querySelector('.play-button');
+                const playPauseBtn = container.querySelector('.play-pause-btn');
+                const progressBar = container.querySelector('.progress-bar');
+                const progressContainer = container.querySelector('.progress-container');
+                const timeDisplay = container.querySelector('.time-display');
+                const volumeBtn = container.querySelector('.volume-btn');
+                const volumeSlider = container.querySelector('.volume-slider');
+                const volumeLevel = container.querySelector('.volume-level');
+                const fullscreenBtn = container.querySelector('.fullscreen-btn');
+                
+                // Play video on container click
+                container.addEventListener('click', function(e) {
+                    if (e.target.closest('.control-btn') || e.target.closest('.progress-container') || e.target.closest('.volume-slider')) {
+                        return; // Don't play if clicking on controls
+                    }
+                    
+                    // Show the video element
+                    videoElement.classList.add('playing');
+                    
+                    // Hide the play button
+                    playButton.style.display = 'none';
+                    
+                    // Play the video
+                    videoElement.play();
+                });
+                
+                // Play/Pause button
+                playPauseBtn.addEventListener('click', function() {
+                    if (videoElement.paused) {
+                        videoElement.play();
+                        // Update play/pause icon
+                        const icon = playPauseBtn.querySelector('svg');
+                        icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; // Pause icon
+                    } else {
+                        videoElement.pause();
+                        // Update play/pause icon
+                        const icon = playPauseBtn.querySelector('svg');
+                        icon.innerHTML = '<path d="M8 5v14l11-7z"/>'; // Play icon
+                    }
+                });
+                
+                // Progress bar
+                videoElement.addEventListener('timeupdate', function() {
+                    const percent = (videoElement.currentTime / videoElement.duration) * 100;
+                    progressBar.style.width = `${percent}%`;
+                    
+                    // Update time display
+                    const currentMinutes = Math.floor(videoElement.currentTime / 60);
+                    const currentSeconds = Math.floor(videoElement.currentTime % 60);
+                    const durationMinutes = Math.floor(videoElement.duration / 60) || 0;
+                    const durationSeconds = Math.floor(videoElement.duration % 60) || 0;
+                    
+                    timeDisplay.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+                });
+                
+                progressContainer.addEventListener('click', function(e) {
+                    const pos = (e.pageX - this.getBoundingClientRect().left) / this.offsetWidth;
+                    videoElement.currentTime = pos * videoElement.duration;
+                });
+                
+                // Volume control
+                volumeBtn.addEventListener('click', function() {
+                    videoElement.muted = !videoElement.muted;
+                    // Update volume icon
+                    const icon = volumeBtn.querySelector('svg');
+                    if (videoElement.muted) {
+                        icon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+                    } else {
+                        icon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+                    }
+                });
+                
+                volumeSlider.addEventListener('click', function(e) {
+                    const pos = (e.pageX - this.getBoundingClientRect().left) / this.offsetWidth;
+                    videoElement.volume = pos;
+                    volumeLevel.style.width = `${pos * 100}%`;
+                });
+                
+                // Set initial volume level
+                videoElement.volume = 0.7;
+                volumeLevel.style.width = '70%';
+                
+                // Full screen button
+                fullscreenBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering the play event
+                    
+                    if (videoElement.requestFullscreen) {
+                        videoElement.requestFullscreen();
+                    } else if (videoElement.webkitRequestFullscreen) {
+                        videoElement.webkitRequestFullscreen();
+                    } else if (videoElement.mozRequestFullScreen) {
+                        videoElement.mozRequestFullScreen();
+                    } else if (videoElement.msRequestFullscreen) {
+                        videoElement.msRequestFullscreen();
+                    }
+                });
+                
+                // Update play/pause icon when video ends
+                videoElement.addEventListener('ended', function() {
+                    const icon = playPauseBtn.querySelector('svg');
+                    icon.innerHTML = '<path d="M8 5v14l11-7z"/>'; // Play icon
+                });
+                
+                // Handle exit full-screen event
+                document.addEventListener('fullscreenchange', function() {
+                    if (!document.fullscreenElement) {
+                        // Update play/pause icon to pause when exiting full-screen
+                        if (!videoElement.paused) {
+                            const icon = playPauseBtn.querySelector('svg');
+                            icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; // Pause icon
+                        }
+                    }
+                });
+            });
+        }
+
+        function renderIndicators() {
+            const indicatorsContainer = document.getElementById('indicators');
+            indicatorsContainer.innerHTML = slidesData.map((_, index) => `
+                <div class="slide-indicator ${index === 0 ? 'active' : ''}" data-slide="${index}"></div>
+            `).join('');
+
+            document.querySelectorAll('.slide-indicator').forEach((indicator, index) => {
+                indicator.addEventListener('click', () => goToSlide(index));
+            });
+        }
+
+        function updateUI() {
+            document.querySelectorAll('.slide').forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            document.querySelectorAll('.slide-indicator').forEach((indicator, index) => {
+                if (index === currentSlide) {
+                    indicator.classList.add('active');
+                } else {
+                    indicator.classList.remove('active');
+                }
+            });
+
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === slidesData.length - 1;
+            document.getElementById('slideCounter').textContent = `Slide ${currentSlide + 1} of ${slidesData.length}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slidesData.length - 1) {
+                currentSlide++;
+                updateUI();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateUI();
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateUI();
+        }
+
+        // Initialize
+        renderSlides();
+        renderIndicators();
+        updateUI();
+
+        document.getElementById('nextBtn').addEventListener('click', nextSlide);
+        document.getElementById('prevBtn').addEventListener('click', prevSlide);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+    </script>
+</body>
+</html>
